@@ -435,18 +435,25 @@ public class VoteService {
       });
     }
     voteDetailResponse.setComments(voteDetailComments);
-    Comment bestComment = commentRepository.findFirstByVoteAndIsDeletedOrderByLikesCountDesc(vote,
-            false)
-        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-    voteDetailResponse.setBestComment(VoteDetailComment.builder()
-        .id(bestComment.getId())
-        .content(bestComment.getContent())
-        .likesCount(bestComment.getLikesCount())
-        .isDeleted(bestComment.isDeleted())
-        .createdAt(bestComment.getCreatedAt())
-        .updatedAt(bestComment.getUpdatedAt())
-        .writerNickname(bestComment.getUser().getNickname())
-        .build());
+    if(voteDetailComments.size() == 0) {
+      voteDetailResponse.setBestComment(null);
+    } else {
+      Comment bestComment = commentRepository.findFirstByVoteAndIsDeletedOrderByLikesCountDesc(vote,
+              false)
+          .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+      voteDetailResponse.setBestComment(VoteDetailComment.builder()
+          .id(bestComment.getId())
+          .content(bestComment.getContent())
+          .likesCount(bestComment.getLikesCount())
+          .isDeleted(bestComment.isDeleted())
+          .createdAt(bestComment.getCreatedAt())
+          .updatedAt(bestComment.getUpdatedAt())
+          .writerNickname(bestComment.getUser().getNickname())
+          .writtenByMe(bestComment.getUser().getId() == user.getId() ? true : false)
+          .likedByMe(
+              likesRepository.findByUserAndComment(user, bestComment).isPresent() ? true : false)
+          .build());
+    }
     return voteDetailResponse;
   }
 
